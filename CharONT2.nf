@@ -11,12 +11,30 @@
 def helpMessage() {
         log.info"""
     Usage:
-    nextflow -c charont.conf run charont.nf --fastq_files = "/path/to/*.fastq" --results_dir = "/path/to/results_dir" 
--profile docker
+    nextflow -c CharONT2.conf run CharONT2.nf -profile docker
     Mandatory argument:
-    -profile                        Configuration profile to use. Available: docker, singularity
-    Other mandatory arguments which may be specified in the charont.conf file
-      
+    -profile                                                              Configuration profile to use. Available: docker, singularity
+    Other mandatory arguments which may be specified in the CharONT2.conf file
+    --fastq_files = "/path/to/samples*fastq"                              Path to fastq files, use wildcards to select multiple samples
+    --results_dir = "/path/to/results_dir"                                Path to a folder where to store results
+    --num_alleles = 2                                                     num_alleles represents the number of expected alleles
+    --PCRThr = 0.8                                                        PCRThr is the identity threshold for in-silico PCR in case inSilicoPCR=true
+    --primerSeqOne = "sequence of interest"                               primerSeqOne is a primer sequence used for in-silico PCR in case inSilicoPCR=true
+    --primerSeqTwo = "sequence of interest"                               primerSeqTwo is a primer sequence used for in-silico PCR in case inSilicoPCR=true
+    --scripts_dir = "/path/to/scripts_dir"                                scripts_dir is the directory containing all scripts
+    --target_reads_consensus = 200                                        target_reads_consensus defines the maximum number of reads used for consensus calling
+    --target_reads_polishing = 200                                        target_reads_polishing defines the maximum number of reads used for consensus polishing
+    --max_reads_preliminary = 100                                         max_reads_preliminary defines the maximum number of reads used for preliminary clustering and consensus calling
+    --clustering_id_threshold = 0.85                                      identity threshold for clustering preliminary allele assembly
+    --plurality=0.15                                                      MAFFT plurality value: minimum fraction of aligned reads supporting a basis for including it in the preliminary consensus
+    --min_maf=0.2                                                         minimum minor allele frequency; if less than min_maf*100% of reads are assigned to Allele //2, the sample is assumed homozygous
+    --IQR_outliers_coef_precl = 3                                         label as candidate outliers reads with score > 3rd_QR + IQR_outliers_coef_precl*IQR or score < 1st_QR - IQR_outliers_coef_precl*IQR
+    --IQR_outliers_coef=3                                                 label as outliers reads with score > 3rd_QR + IQR_outliers_coef*IQR or score < 1st_QR - IQR_outliers_coef*IQR; IQR is computed within each cluster
+    --fast_alignment_flag = 1                                             set fast_alignment_flag=1 if you want to perform fast multiple sequence alignment; otherwise set fast_alignment_flag=0
+    --min_clipped_len = 50                                                minimum number of soft-clipped bases to be considered as a DEL or INS
+    --sd_noise_score = 0.2                                                sd_noise_score is the standard deviation of gaussian-distributed noise with zero mean added to score
+    --primers_length = 0                                                  primers_length defines how many bases are trimmed from consensus sequences
+    --medaka_model="r941_min_sup_g507"                                    medaka model for consensus polishing
     """.stripIndent()
 }
 
@@ -112,7 +130,7 @@ process draftConsensusCalling {
         val(sample) from readsAssignment_draftConsensusCalling
 
     output:
-        
+        val(sample) into draftConsensusCalling_consensusPolishing        
 
     script:
     if(params.draftConsensusCalling)
@@ -130,31 +148,46 @@ process draftConsensusCalling {
     """
     else
     """
-        
+        echo "Skipped."
     """
 }
 
 process consensusPolishing {
     input:
-
+        val(sample) from draftConsensusCalling_consensusPolishing
 
     output:
-        
-
+        val(sample) into consensusPolishing_trfAnnotate
+    
     script:
     if(params.consensusPolishing)
     """
+        mkdir -p ${params.results_dir}/consensusPolishing
+        export PATH=\$PATH:/opt/conda/envs/CharONT_env/bin/
+
+        draft_consensus_files=\$(find ${params.results_dir}/draftConsensusCalling/${sample}_trimmed | grep ${sample}"_trimmed_draft_allele.*\\.fasta" | grep -v "tmp")
+
+        for f in \$draft_consensus_files; do
+           allele_number=\$(echo \$(basename \$f) | sed \'s/.*_allele_//\' | sed \'s/\\.fasta//\')
+           fastq_file=\$(find ${params.results_dir}/readsAssignment/${sample}_trimmed | grep "\\d.*\\.fastq" | grep "allele_"\$allele_number)
+           /opt/conda/envs/CharONT_env/bin/Rscript ${params.scripts_dir}/Polish_consensus.R draft_consensus=\$f fastq_file=\$fastq_file allele_num=\$allele_number TRP=${params.target_reads_polishing} num_threads=${task.cpus} primers_length=${params.primers_length} medaka_model=${params.medaka_model}
+        done
         
     """
     else
     """
-        
+        mkdir -p ${params.results_dir}/consensusPolishing
+        draft_consensus_files=\$(find ${params.results_dir}/draftConsensusCalling/${sample}_trimmed | grep ${sample}"_trimmed_draft_allele.*\\.fasta" | grep -v "tmp")
+        for f in \$draft_consensus_files; do
+            polished_consensus_file=\$(echo \$f | sed \'s/draft/polished/\' | sed \'s/draftConsensusCalling/consensusPolishing/\')
+            /opt/conda/envs/CharONT_env/bin/seqtk trimfq \$f -b ${params.primers_length} -e ${params.primers_length}  > \$polished_consensus_file
+        done
     """
 }
 
 process trfAnnotate {
     input:
-
+          val(sample) from consensusPolishing_trfAnnotate
 
     output:
         
@@ -162,11 +195,27 @@ process trfAnnotate {
     script:
     if(params.trfAnnotate)
     """
-        
+        mkdir -p ${params.results_dir}/trfAnnotate/
+        polished_consensus_files=\$(find ${params.results_dir}/consensusPolishing/${sample}_trimmed | grep ${sample}"_trimmed_allele.*\\.fasta" | grep -v "untrimmed")
+
+        for f in \$polished_consensus_files; do
+            sample_name=\$(echo \$(basename \$f) | sed \'s/_allele.*//\')
+            mkdir -p ${params.results_dir}/trfAnnotate/\$sample_name
+            cp \$f ${params.results_dir}/trfAnnotate/\$sample_name
+            cd ${params.results_dir}/trfAnnotate/\$sample_name
+            /opt/conda/envs/CharONT_env/bin/trf \$f 2 7 7 80 10 50 500
+            /opt/conda/envs/CharONT_env/bin/trf \$f 2 3 5 80 10 50 500
+            /opt/conda/envs/CharONT_env/bin/trf \$f 2 500 500 80 10 50 500
+        done
     """
     else
     """
-        
+        mkdir -p ${params.results_dir}/trfAnnotate/
+        for f in \$polished_consensus_files; do
+            sample_name=\$(echo \$(basename \$f) | sed \'s/_allele.*//\')
+            mkdir -p ${params.results_dir}/trfAnnotate/\$sample_name
+            cp \$f ${params.results_dir}/trfAnnotate/\$sample_name
+        done
     """
 }
 
