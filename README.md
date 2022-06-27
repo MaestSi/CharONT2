@@ -1,8 +1,5 @@
 # CharONT2
-A NextFlow ONT-based pipeline for characterizing long genomic regions
-
-# pycoMethFlow
-**pycoMethFlow** is a [Nextflow](https://www.nextflow.io) pipeline for running [minimap2](https://github.com/lh3/minimap2) + [nanopolish](https://github.com/jts/nanopolish) call-methylation + [pycoMeth](https://github.com/snajder-r/pycoMeth) on multiple samples and across multiple infrastructures in a streamlined, portable and reproducible manner.
+**CharONT2** is a [Nextflow](https://www.nextflow.io) pipeline for characterizing long genomic regions starting from ONT data on multiple samples and across multiple infrastructures in a streamlined, portable and reproducible manner. It is the successor of [CharONT](https://github.com/MaestSi/CharONT).
 
 ## Getting started
 
@@ -15,7 +12,7 @@ A NextFlow ONT-based pipeline for characterizing long genomic regions
 
 ```
 git clone https://github.com/MaestSi/CharONT2.git
-cd pycoMethFlow
+cd CharONT2
 chmod 755 *
 ```
 
