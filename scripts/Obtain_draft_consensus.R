@@ -41,15 +41,15 @@ Obtain_draft_consensus <- function(fastq_file, allele_num, min_maf, TRC, PLUR, n
   draft_consensus_tmp2 <- paste0(sample_dir, "/", sample_name, "_draft_allele_", allele_num, "_tmp2.fasta")
   draft_consensus <- paste0(sample_dir, "/", sample_name, "_draft_allele_", allele_num, ".fasta")
   dir.create(sample_dir)
-  logfile <- paste0(sample_dir, "/logfile.txt")
+  logfile <- paste0(dirname(dirname(sample_dir)), "/logfile.txt")
   num_reads_allele <- as.double(system(paste0("cat ", fasta_file, " | grep \"^>\" | wc -l"), intern=TRUE))
   num_reads_sample <- as.double(system(paste0("cat ", paste0(dirname(dirname(dirname(fastq_file))), "/inSilicoPCR/", sample_name, "_trimmed.fasta"), " | grep \"^>\" | wc -l"), intern=TRUE))
   #create consensus sequence
   allelic_ratio <- num_reads_allele/num_reads_sample
   allelic_ratio_perc <- allelic_ratio*100
   
-  cat(text = paste0("Sample ", sample_name, ": ", sprintf("%.2f", allelic_ratio_perc), "% reads assigned to Allele #", allele_num), sep = "\n")
-  cat(text = paste0("Sample ", sample_name, ": ", sprintf("%.2f", allelic_ratio_perc), "% reads assigned to Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
+  cat(text = paste0("Sample ", sample_name, ": ", num_reads_allele, " reads (", sprintf("%.2f", allelic_ratio_perc), "%) assigned to Allele #", allele_num), sep = "\n")
+  cat(text = paste0("Sample ", sample_name, ": ", num_reads_allele, " reads (", sprintf("%.2f", allelic_ratio_perc), "%) assigned to Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
   #if not at least 3 reads are assigned to the allele, consensus calling is skipped
   if (num_reads_allele < 3) {
     cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num), sep = "\n")

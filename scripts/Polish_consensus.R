@@ -37,7 +37,7 @@ Polish_consensus <- function(draft_consensus, fastq_file, allele_num, num_thread
   sample_name <- gsub(pattern = "_reads_allele_.*", replacement = "", x = basename(fasta_file))
   sample_dir_output <- gsub(pattern = "readsAssignment", replacement = paste0("consensusPolishing/", sample_name), x = dirname(dirname(fastq_file)))
   dir.create(sample_dir_output)
-  logfile <- paste0(sample_dir, "/logfile.txt")
+  logfile <- paste0(dirname(dirname(sample_dir)), "/logfile.txt")
   num_reads_allele <- as.double(system(paste0("cat ", fasta_file, " | grep \"^>\" | wc -l"), intern=TRUE))
   num_threads_medaka <- min(num_threads, 8)
   paf_file <- gsub(pattern = "\\.fastq$", replacement = ".paf", x = fastq_file)

@@ -38,7 +38,7 @@ Cluster_reads <- function(fastq_file, first_allele_preliminary, IQR_outliers_coe
   sample_name <- gsub(pattern = "_trimmed", replacement = "", x = basename(gsub(pattern = "\\.fastq", replacement = "", x = fastq_file)))
   sample_dir <- gsub(pattern = "_trimmed", replacement = "", x = gsub(pattern = "inSilicoPCR", replacement = "readsAssignment", x = gsub(pattern = "\\.fastq", replacement = "", x = fastq_file)))
   dir.create(sample_dir)
-  logfile <- paste0(sample_dir, "/logfile.txt")
+  logfile <- paste0(dirname(dirname(sample_dir)), "/logfile.txt")
   num_reads_sample <- as.double(system(paste0("/opt/conda/envs/CharONT_env/bin/seqtk seq -A ", fastq_file, " | grep \"^>\" | wc -l"), intern=TRUE))
   DNAStringSet_obj_preliminary <- readDNAStringSet(first_allele_preliminary, "fasta")
   reference_length <- width(DNAStringSet_obj_preliminary)
