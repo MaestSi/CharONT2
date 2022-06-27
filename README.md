@@ -1,5 +1,10 @@
 # CharONT2
-**CharONT2** is a [Nextflow](https://www.nextflow.io) pipeline for characterizing long genomic regions starting from ONT data on multiple samples and across multiple infrastructures in a streamlined, portable and reproducible manner. It is the successor of [CharONT](https://github.com/MaestSi/CharONT).
+**CharONT2** is a [Nextflow](https://www.nextflow.io) pipeline for characterizing long genomic regions starting from ONT reads on multiple samples and across multiple infrastructures in a streamlined, portable and reproducible manner. It is the successor of [CharONT](https://github.com/MaestSi/CharONT).
+In particular, **CharONT2** is a consensus calling pipeline meant for characterizing long genomic regions - such as Short Tandem Repeats - from organisms with ploidy >= 1. Starting from ONT reads including a shared flanking sequence, it provides consensus sequences for each allele and tandem repeats annotations. In case you used an enrichment method different to PCR (e.g. CRISPR-Cas9), or performed WGS, amplicon-like sequences can be extracted _in-silico_ based on known flanking sequences.
+
+<p align="center">
+  <img src="Figures/CharONT_logo.png" alt="drawing" width=450" title="CharONT_logo">
+</p>
 
 ## Getting started
 
@@ -15,6 +20,27 @@ git clone https://github.com/MaestSi/CharONT2.git
 cd CharONT2
 chmod 755 *
 ```
+
+## Overview
+
+<p align="center">
+  <img src="Figures/CharONT2_pipeline_flowchart.png" alt="drawing" width="700" title="CharONT2_pipeline_flowchart">
+</p>
+
+**Identification of reads from the different alleles**
+
+After creating a preliminary consensus sequence for Allele #1, all reads are mapped to it and, based on the CIGAR string, the biggest DEL and INS are identified for each read, resulting in a bidimensional Score. At this point, reads with either component of the Score deviating from the 1st or 3rd inter quartile range (IQR) for more than  _IQR\_outliers\_coef\_precl_\*IQR are labelled as candidate outliers, and are excluded from the k-means clustering. After clustering, IQR is computed within each cluster for both components of the Score, and reads with either component deviating from the 1st or 3rd IQR for more than _IQR\_outliers\_coef_\*IQR are labelled as outliers. Scores are plotted so that the user may tune _IQR\_outliers\_coef\_precl_ and _IQR\_outliers\_coef_ parameters according to their preferences, based on visual inspection of \<sample_name\>\_reads\_scores.png. In the provided example, reads from Allele #2 show 400 bp INS with respect to Allele #1. Notably, one read with 1000 bp INS is identified, which may indicate a somatic variant.
+
+<p align="center">
+  <img src="Figures/Example_workflow.png" alt="drawing" width="1000" title="Example workflow">
+</p>
+
+Also in case the SV is too big to allow mapping of reads at both 5' and 3' flanking regions, the size of the SV is estimated from soft-clipping. In particular, depending on whether soft-clipping occurs at the 5' end **a)** or at the 3' end **b)**, a different formula is applied for calculating the size of the SV compared to Allele #1, used as a Reference.
+
+<p align="center">
+  <img src="Figures/SV_size_from_softclipping.png" alt="drawing" width="1000" title="SV size from soft-clipping">
+</p>
+
 
 ## Usage
 
@@ -47,6 +73,7 @@ Other mandatory arguments which may be specified in the CharONT2.conf file
 --primers_length                                                      primers_length defines how many bases are trimmed from consensus sequences
 --medaka_model                                                        medaka model for consensus polishing
 ```
+
 
 ## Citation
 
