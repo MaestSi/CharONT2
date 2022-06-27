@@ -24,7 +24,7 @@ chmod 755 *
 ## Overview
 
 <p align="center">
-  <img src="Figures/CharONT2_pipeline_flowchart.png" alt="drawing" width="700" title="CharONT2_pipeline_flowchart">
+  <img src="Figures/CharONT2_pipeline_flowchart.png" alt="drawing" width="300" title="CharONT2_pipeline_flowchart">
 </p>
 
 **Identification of reads from the different alleles**
