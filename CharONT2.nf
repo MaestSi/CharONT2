@@ -11,7 +11,12 @@
 def helpMessage() {
         log.info"""
     Usage:
-    nextflow -c CharONT2.conf run CharONT2.nf -profile docker
+    nextflow -c CharONT2.conf run CharONT2.nf \
+    --fastq_files = "/path/to/files*.fastq" \
+    --scripts_dir = "/path/to/scripts_dir" \
+    --results_dir = "/path/to/results_dir" \
+    -profile docker
+
     Mandatory argument:
     -profile                                                              Configuration profile to use. Available: docker, singularity
     Other mandatory arguments which may be specified in the CharONT2.conf file
