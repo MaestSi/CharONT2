@@ -37,6 +37,9 @@ Obtain_draft_consensus <- function(fastq_file, allele_num, min_maf, TRC, PLUR, n
   fasta_file <- gsub(pattern = "\\.fastq", replacement = ".fasta", x = fastq_file)
   sample_name <- gsub(pattern = "_reads_allele_.*", replacement = "", x = basename(fasta_file))
   sample_dir <- gsub(pattern = "readsAssignment", replacement = paste0("draftConsensusCalling/", sample_name), x = dirname(dirname(fastq_file)))
+  draft_consensus_tmp1 <- paste0(sample_dir, "/", sample_name, "_draft_allele_", allele_num, "_tmp1.fasta")
+  draft_consensus_tmp2 <- paste0(sample_dir, "/", sample_name, "_draft_allele_", allele_num, "_tmp2.fasta")
+  draft_consensus <- paste0(sample_dir, "/", sample_name, "_draft_allele_", allele_num, ".fasta")
   dir.create(sample_dir)
   logfile <- paste0(sample_dir, "/logfile.txt")
   num_reads_allele <- as.double(system(paste0("cat ", fasta_file, " | grep \"^>\" | wc -l"), intern=TRUE))
@@ -48,26 +51,19 @@ Obtain_draft_consensus <- function(fastq_file, allele_num, min_maf, TRC, PLUR, n
   cat(text = paste0("Sample ", sample_name, ": ", sprintf("%.2f", allelic_ratio_perc), "% reads assigned to Allele #", allele_num), sep = "\n")
   cat(text = paste0("Sample ", sample_name, ": ", sprintf("%.2f", allelic_ratio_perc), "% reads assigned to Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
   #if not at least 3 reads are assigned to the allele, consensus calling is skipped
-  if (num_reads_allele < 3 || allelic_ratio < min_maf) {
-    cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num, "; skipping consensus calling"), sep = "\n")
-    cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num, "; skipping consensus calling"),  file = logfile, sep = "\n", append = TRUE)
-    allele_untrimmed <- paste0(sample_dir, "/", sample_name, "/", sample_name, "_allele_", allele_num, "_untrimmed.fasta")
-    allele <- paste0(sample_dir, "/", sample_name, "_allele_", allele_num, ".fasta")
-    system(paste0("head -n2 ", fasta_file, " > ", allele_untrimmed))
-    system(paste0(seqtk, " trimfq ", allele_untrimmed, " -b ", primers_length, " -e ", primers_length, " > ", allele))
+  if (num_reads_allele < 3) {
+    cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num), sep = "\n")
+    cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
+    system(paste0("head -n2 ", fasta_file, " > ", draft_consensus))
+  } else if (allelic_ratio < min_maf) {
+    cat(text = paste0("WARNING: Only ", num_reads_allele, " (", sprintf("%.2f", allelic_ratio_perc), ") reads available for sample ", sample_name, " for Allele #", allele_num, "; skipping consensus calling"), sep = "\n")
+    cat(text = paste0("WARNING: Only ", num_reads_allele, " (", sprintf("%.2f", allelic_ratio_perc), ") reads available for sample ", sample_name, " for Allele #", allele_num, "; skipping consensus calling"),  file = logfile, sep = "\n", append = TRUE)
+  } else if (num_reads_allele < target_reads_consensus) {
+    target_reads_consensus <- num_reads_allele
+    cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num), sep = "\n")
+    cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
   } else {
-    if (num_reads_allele < target_reads_consensus) {
-      target_reads_consensus <- num_reads_allele
-      target_reads_polishing <- num_reads_allele
-      cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num), sep = "\n")
-      cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
-    }
     plurality_value <- PLUR*target_reads_consensus
-    draft_consensus_tmp1 <- paste0(sample_dir, "/", sample_name, "_draft_allele_", allele_num, "_tmp1.fasta")
-    draft_consensus_tmp2 <- paste0(sample_dir, "/", sample_name, "_draft_allele_", allele_num, "_tmp2.fasta")
-    draft_consensus <- paste0(sample_dir, "/", sample_name, "_draft_allele_", allele_num, ".fasta")
-    allele_untrimmed <- paste0(sample_dir, "/", sample_name, "/", sample_name, "_draft_allele_", allele_num, "_untrimmed.fasta")
-    allele <- paste0(sample_dir, "/", sample_name, "_allele_", allele_num, ".fasta")
     sequences <- readDNAStringSet(fasta_file, "fasta")
     ws <- width(sequences)
     amplicon_length <- ceiling(mean(ws))
