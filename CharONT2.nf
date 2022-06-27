@@ -203,9 +203,9 @@ process trfAnnotate {
         cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample}
 
         for f in \$polished_consensus_files; do            
-            /opt/conda/envs/CharONT_env/bin/trf \$f 2 7 7 80 10 50 500
-            /opt/conda/envs/CharONT_env/bin/trf \$f 2 3 5 80 10 50 500
-            /opt/conda/envs/CharONT_env/bin/trf \$f 2 500 500 80 10 50 500
+            /opt/conda/envs/CharONT_env/bin/trf \$f 2 7 7 80 10 50 500 || echo "processed \$? TRs"
+            /opt/conda/envs/CharONT_env/bin/trf \$f 2 3 5 80 10 50 500 || echo "processed \$? TRs"
+            /opt/conda/envs/CharONT_env/bin/trf \$f 2 500 500 80 10 50 500 || echo "processed \$? TRs"
         done
     """
     else
