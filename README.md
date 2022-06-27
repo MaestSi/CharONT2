@@ -73,6 +73,21 @@ Other mandatory arguments which may be specified in the CharONT2.conf file
 --medaka_model                                                        medaka model for consensus polishing
 ```
 
+## Pipeline testing
+                                                                                                                                                
+A test fastq dataset obtained with [DeepSimulator](https://github.com/liyu95/DeepSimulator) is provided. The datasets contains 1,000 reads simulating a heterozygous short tandem repeat expansion in DMPK gene.
+For full pipeline testing, set the following parsmeters:
+
+```                                                                                                                                                
+--primerSeqOne="GCTCCGCAGGGGGGGCGGGTCTGGCCGGGAGGAGGGGCGGGGAACGGGCTAGAAAGTTTGCAGCAACTTTTCTCGAGCTTGCGTCCCAGGAGCGGATGCGC"
+--primerSeqTwo="TTATCTAGGGAGATCCCGGAGGGAATCTGGTGAGGCCTGAACGGAGGGAGATCTGGGGCTGAATAAAGGGCTTCTGCCCTCTAAAGTCGCAAAGACGTAGG"
+```                                                                                                                                
+
+If the pipeline completes successfully, the following results are produced.                                                                                                                                 
+                                                                                                                                
+<p align="center">
+  <img src="Figures/Test_dataset_results.png" alt="drawing" width=800" title="Test_dataset_results">
+</p>                                            
 
 ## Citation
 
