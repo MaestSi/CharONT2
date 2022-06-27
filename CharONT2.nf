@@ -11,11 +11,7 @@
 def helpMessage() {
         log.info"""
     Usage:
-    nextflow -c CharONT2.conf run CharONT2.nf \
-    --fastq_files = "/path/to/files*.fastq" \
-    --scripts_dir = "/path/to/scripts_dir" \
-    --results_dir = "/path/to/results_dir" \
-    -profile docker
+    nextflow -c CharONT2.conf run CharONT2.nf --fastq_files = "/path/to/files*.fastq" --scripts_dir = "/path/to/scripts_dir" --results_dir = "/path/to/results_dir" -profile docker
 
     Mandatory argument:
     -profile                                                              Configuration profile to use. Available: docker, singularity
@@ -122,7 +118,7 @@ process readsAssignment {
     """
         mkdir -p ${params.results_dir}/readsAssignment
         export PATH=\$PATH:/opt/conda/envs/CharONT_env/bin/
-        /opt/conda/envs/CharONT_env/bin/Rscript ${params.scripts_dir}/Cluster_reads.R fastq_file=${params.results_dir}/inSilicoPCR/${sample}_trimmed.fastq first_allele_preliminary=${params.results_dir}/preliminaryConsensusCalling/${sample}_trimmed/${sample}_trimmed_preliminary_allele.fasta IQR_outliers_coef_precl=${params.IQR_outliers_coef_precl} IQR_outliers_coef=${params.IQR_outliers_coef} min_clipped_len=${params.min_clipped_len} sd_noise_score=${params.sd_noise_score} num_alleles=${params.num_alleles}
+        /opt/conda/envs/CharONT_env/bin/Rscript ${params.scripts_dir}/Cluster_reads.R fastq_file=${params.results_dir}/inSilicoPCR/${sample}_trimmed.fastq first_allele_preliminary=${params.results_dir}/preliminaryConsensusCalling/${sample}/${sample}_preliminary_allele.fasta IQR_outliers_coef_precl=${params.IQR_outliers_coef_precl} IQR_outliers_coef=${params.IQR_outliers_coef} min_clipped_len=${params.min_clipped_len} sd_noise_score=${params.sd_noise_score} num_alleles=${params.num_alleles}
     """
     else
     """
@@ -143,7 +139,7 @@ process draftConsensusCalling {
         mkdir -p ${params.results_dir}/draftConsensusCalling
         export PATH=\$PATH:/opt/conda/envs/CharONT_env/bin/
 
-        fastq_files=\$(find ${params.results_dir}/readsAssignment/${sample}_trimmed | grep "\\d.*\\.fastq" | grep -v "outliers")
+        fastq_files=\$(find ${params.results_dir}/readsAssignment/${sample} | grep "\\d.*\\.fastq" | grep -v "outliers")
 
         for f in \$fastq_files; do
            allele_number=\$(echo \$(basename \$f) | sed \'s/.*_allele_//\' | sed \'s/\\.fastq//\')
@@ -170,11 +166,11 @@ process consensusPolishing {
         mkdir -p ${params.results_dir}/consensusPolishing
         export PATH=\$PATH:/opt/conda/envs/CharONT_env/bin/
 
-        draft_consensus_files=\$(find ${params.results_dir}/draftConsensusCalling/${sample}_trimmed | grep ${sample}"_trimmed_draft_allele.*\\.fasta" | grep -v "tmp")
+        draft_consensus_files=\$(find ${params.results_dir}/draftConsensusCalling/${sample} | grep ${sample}"_draft_allele.*\\.fasta" | grep -v "tmp")
 
         for f in \$draft_consensus_files; do
            allele_number=\$(echo \$(basename \$f) | sed \'s/.*_allele_//\' | sed \'s/\\.fasta//\')
-           fastq_file=\$(find ${params.results_dir}/readsAssignment/${sample}_trimmed | grep "\\d.*\\.fastq" | grep "allele_"\$allele_number)
+           fastq_file=\$(find ${params.results_dir}/readsAssignment/${sample} | grep "\\d.*\\.fastq" | grep "allele_"\$allele_number)
            /opt/conda/envs/CharONT_env/bin/Rscript ${params.scripts_dir}/Polish_consensus.R draft_consensus=\$f fastq_file=\$fastq_file allele_num=\$allele_number TRP=${params.target_reads_polishing} num_threads=${task.cpus} primers_length=${params.primers_length} medaka_model=${params.medaka_model}
         done
         
@@ -182,7 +178,7 @@ process consensusPolishing {
     else
     """
         mkdir -p ${params.results_dir}/consensusPolishing
-        draft_consensus_files=\$(find ${params.results_dir}/draftConsensusCalling/${sample}_trimmed | grep ${sample}"_trimmed_draft_allele.*\\.fasta" | grep -v "tmp")
+        draft_consensus_files=\$(find ${params.results_dir}/draftConsensusCalling/${sample} | grep ${sample}"_draft_allele.*\\.fasta" | grep -v "tmp")
         for f in \$draft_consensus_files; do
             polished_consensus_file=\$(echo \$f | sed \'s/draft/polished/\' | sed \'s/draftConsensusCalling/consensusPolishing/\')
             /opt/conda/envs/CharONT_env/bin/seqtk trimfq \$f -b ${params.primers_length} -e ${params.primers_length}  > \$polished_consensus_file
@@ -201,13 +197,12 @@ process trfAnnotate {
     if(params.trfAnnotate)
     """
         mkdir -p ${params.results_dir}/trfAnnotate/
-        polished_consensus_files=\$(find ${params.results_dir}/consensusPolishing/${sample}_trimmed | grep ${sample}"_trimmed_allele.*\\.fasta" | grep -v "untrimmed")
+        polished_consensus_files=\$(find ${params.results_dir}/consensusPolishing/${sample} | grep ${sample}"_allele.*\\.fasta" | grep -v "untrimmed")
+        mkdir -p ${params.results_dir}/trfAnnotate/${sample}
+        cd ${params.results_dir}/trfAnnotate/${sample}
+        cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample}
 
-        for f in \$polished_consensus_files; do
-            sample_name=\$(echo \$(basename \$f) | sed \'s/_allele.*//\')
-            mkdir -p ${params.results_dir}/trfAnnotate/\$sample_name
-            cp \$f ${params.results_dir}/trfAnnotate/\$sample_name
-            cd ${params.results_dir}/trfAnnotate/\$sample_name
+        for f in \$polished_consensus_files; do            
             /opt/conda/envs/CharONT_env/bin/trf \$f 2 7 7 80 10 50 500
             /opt/conda/envs/CharONT_env/bin/trf \$f 2 3 5 80 10 50 500
             /opt/conda/envs/CharONT_env/bin/trf \$f 2 500 500 80 10 50 500
@@ -216,11 +211,10 @@ process trfAnnotate {
     else
     """
         mkdir -p ${params.results_dir}/trfAnnotate/
-        for f in \$polished_consensus_files; do
-            sample_name=\$(echo \$(basename \$f) | sed \'s/_allele.*//\')
-            mkdir -p ${params.results_dir}/trfAnnotate/\$sample_name
-            cp \$f ${params.results_dir}/trfAnnotate/\$sample_name
-        done
+        polished_consensus_files=\$(find ${params.results_dir}/consensusPolishing/${sample} | grep ${sample}"_allele.*\\.fasta" | grep -v "untrimmed")
+        mkdir -p ${params.results_dir}/trfAnnotate/${sample}
+        cd ${params.results_dir}/trfAnnotate/${sample}
+        cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample}
     """
 }
 
