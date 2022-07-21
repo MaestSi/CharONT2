@@ -27,7 +27,7 @@ def helpMessage() {
     --target_reads_polishing                                              target_reads_polishing defines the maximum number of reads used for consensus polishing
     --max_reads_preliminary                                               max_reads_preliminary defines the maximum number of reads used for preliminary clustering and consensus calling
     --clustering_id_threshold                                             identity threshold for clustering preliminary allele assembly
-    --plurality                                                           MAFFT plurality value: minimum fraction of aligned reads supporting a basis for including it in the preliminary consensus
+    --plurality                                                           cut-off for the number of positive matches in the multiple sequence alignment below which there is no consensus
     --min_maf                                                             minimum minor allele frequency; if less than min_maf*100% of reads are assigned to Allele //2, the sample is assumed homozygous
     --IQR_outliers_coef_precl                                             label as candidate outliers reads with score > 3rd_QR + IQR_outliers_coef_precl*IQR or score < 1st_QR - IQR_outliers_coef_precl*IQR
     --IQR_outliers_coef                                                   label as outliers reads with score > 3rd_QR + IQR_outliers_coef*IQR or score < 1st_QR - IQR_outliers_coef*IQR; IQR is computed within each cluster
