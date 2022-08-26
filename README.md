@@ -96,11 +96,13 @@ If the pipeline completes successfully, the following results are produced.
 
 ## Citation
 
-If this tool is useful for your work, please consider citing our [manuscript](https://www.frontiersin.org/articles/10.3389/fgene.2021.743230/full).
+If this tool is useful for your work, please consider citing our [manuscript](https://doi.org/10.7554/eLife.80229).
 
-Grosso V, Marcolungo L, Maestri S, Alfano M, Lavezzari D, Iadarola B, Salviati A, Mariotti B, Botta A, D'Apice MR, Novelli G, Delledonne M and Rossato M. Characterization of FMR1 repeat-expansion and intragenic variants by indirect sequence capture. Front. Genet. doi: 10.3389/fgene.2021.743230.
+Alfano M., De Antoni L., Centofanti F., Visconti V. V., Maestri S., Degli Esposti C., Massa R., D'Apice M. R., Novelli G., Delledonne M., Botta A. and Rossato M. (2022) Characterization of full-length CNBP expanded alleles in myotonic dystrophy type 2 patients by Cas9-mediated enrichment and nanopore sequencing eLife 11:e80229.
 
 For further information, please refer to the following manuscripts:
+
+Grosso V, Marcolungo L, Maestri S, Alfano M, Lavezzari D, Iadarola B, Salviati A, Mariotti B, Botta A, D'Apice MR, Novelli G, Delledonne M and Rossato M. Characterization of FMR1 repeat-expansion and intragenic variants by indirect sequence capture. Front. Genet. doi: 10.3389/fgene.2021.743230.
 
 De Coster W, D'Hert S, Schultz DT, Cruts M, Van Broeckhoven C. NanoPack: visualizing and processing long-read sequencing data. Bioinformatics. 2018;34(15):2666-2669. doi:10.1093/bioinformatics/bty149
 
