@@ -51,41 +51,46 @@ Obtain_draft_consensus <- function(fastq_file, allele_num, min_maf, TRC, PLUR, n
   cat(text = paste0("Sample ", sample_name, ": ", num_reads_allele, " reads (", sprintf("%.2f", allelic_ratio_perc), "%) assigned to Allele #", allele_num), sep = "\n")
   cat(text = paste0("Sample ", sample_name, ": ", num_reads_allele, " reads (", sprintf("%.2f", allelic_ratio_perc), "%) assigned to Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
   #if not at least 3 reads are assigned to the allele, consensus calling is skipped
-  if (num_reads_allele < 3) {
-    cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num), sep = "\n")
-    cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
-    system(paste0("head -n2 ", fasta_file, " > ", draft_consensus))
-  } else if (allelic_ratio < min_maf) {
-    cat(text = paste0("WARNING: Only ", num_reads_allele, " (", sprintf("%.2f", allelic_ratio_perc), "%) reads available for sample ", sample_name, " for Allele #", allele_num, "; skipping consensus calling"), sep = "\n")
-    cat(text = paste0("WARNING: Only ", num_reads_allele, " (", sprintf("%.2f", allelic_ratio_perc), "%) reads available for sample ", sample_name, " for Allele #", allele_num, "; skipping consensus calling"),  file = logfile, sep = "\n", append = TRUE)
-  } else if (num_reads_allele < target_reads_consensus) {
-    target_reads_consensus <- num_reads_allele
-    cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num), sep = "\n")
-    cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
-  } 
-  plurality_value <- PLUR*target_reads_consensus
-  sequences <- readDNAStringSet(fasta_file, "fasta")
-  ws <- width(sequences)
-  amplicon_length <- ceiling(mean(ws))
-  draft_reads_fq <- paste0(sample_dir, "/", sample_name, "_draft_", target_reads_consensus, "_reads_allele_", allele_num, ".fastq")
-  draft_reads_fa <- paste0(sample_dir, "/", sample_name, "_draft_", target_reads_consensus, "_reads_allele_", allele_num, ".fasta")
-  seed <- 1
-  system(paste0("/opt/conda/envs/CharONT_env/bin/seqtk sample -s ", seed , " ", fastq_file, " ",  target_reads_consensus, " > ", draft_reads_fq))
-  system(paste0("/opt/conda/envs/CharONT_env/bin/seqtk seq -A ", draft_reads_fq, " > ", draft_reads_fa))
-  mfa_file <- gsub(pattern = "\\.fasta$", replacement = ".mfa", x = draft_reads_fa)
-  if (fast_alignment_flag == 1) {
-    system(paste0("/opt/conda/envs/CharONT_env/bin/mafft --auto --thread ", num_threads, " --adjustdirectionaccurately ", draft_reads_fa, " > ", mfa_file))
+  if (num_reads_allele < 3 || allelic_ratio < min_maf) {
+    if (num_reads_allele < 3) {
+      cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num), sep = "\n")
+      cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
+      system(paste0("head -n2 ", fasta_file, " > ", draft_consensus))
+    }
+    if (allelic_ratio < min_maf) {
+      cat(text = paste0("WARNING: Only ", num_reads_allele, " (", sprintf("%.2f", allelic_ratio_perc), "%) reads available for sample ", sample_name, " for Allele #", allele_num, "; skipping consensus calling"), sep = "\n")
+      cat(text = paste0("WARNING: Only ", num_reads_allele, " (", sprintf("%.2f", allelic_ratio_perc), "%) reads available for sample ", sample_name, " for Allele #", allele_num, "; skipping consensus calling"),  file = logfile, sep = "\n", append = TRUE)
+    }
   } else {
-    system(paste0("/opt/conda/envs/CharONT_env/bin/mafft -linsi --thread ", num_threads, " --adjustdirectionaccurately ", draft_reads_fa, " > ", mfa_file))
+    if (num_reads_allele < target_reads_consensus) {
+      target_reads_consensus <- num_reads_allele
+      cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num), sep = "\n")
+      cat(text = paste0("WARNING: Only ", num_reads_allele, " reads available for sample ", sample_name, " for Allele #", allele_num),  file = logfile, sep = "\n", append = TRUE)
+    } 
+    plurality_value <- PLUR*target_reads_consensus
+    sequences <- readDNAStringSet(fasta_file, "fasta")
+    ws <- width(sequences)
+    amplicon_length <- ceiling(mean(ws))
+    draft_reads_fq <- paste0(sample_dir, "/", sample_name, "_draft_", target_reads_consensus, "_reads_allele_", allele_num, ".fastq")
+    draft_reads_fa <- paste0(sample_dir, "/", sample_name, "_draft_", target_reads_consensus, "_reads_allele_", allele_num, ".fasta")
+    seed <- 1
+    system(paste0("/opt/conda/envs/CharONT_env/bin/seqtk sample -s ", seed , " ", fastq_file, " ",  target_reads_consensus, " > ", draft_reads_fq))
+    system(paste0("/opt/conda/envs/CharONT_env/bin/seqtk seq -A ", draft_reads_fq, " > ", draft_reads_fa))
+    mfa_file <- gsub(pattern = "\\.fasta$", replacement = ".mfa", x = draft_reads_fa)
+    if (fast_alignment_flag == 1) {
+      system(paste0("/opt/conda/envs/CharONT_env/bin/mafft --auto --thread ", num_threads, " --adjustdirectionaccurately ", draft_reads_fa, " > ", mfa_file))
+    } else {
+      system(paste0("/opt/conda/envs/CharONT_env/bin/mafft -linsi --thread ", num_threads, " --adjustdirectionaccurately ", draft_reads_fa, " > ", mfa_file))
+    }
+    system(paste0("/opt/conda/envs/CharONT_env/bin/cons -sequence ", mfa_file, " -plurality ", plurality_value, " -outseq ", draft_consensus_tmp1))
+    system(paste0("sed 's/[nN]//g' ", draft_consensus_tmp1, " > ", draft_consensus_tmp2))
+    DNAStringSet_obj <- readDNAStringSet(draft_consensus_tmp2, "fasta")
+    DNAStringSet_obj_renamed <- DNAStringSet_obj
+    original_headers <- names(DNAStringSet_obj)
+    sequences <- seq(DNAStringSet_obj)
+    names(DNAStringSet_obj_renamed) <- paste0("Allele_number_", allele_num)
+    writeXStringSet(x = DNAStringSet_obj_renamed, filepath = draft_consensus, format = "fasta", width = 20000)
   }
-  system(paste0("/opt/conda/envs/CharONT_env/bin/cons -sequence ", mfa_file, " -plurality ", plurality_value, " -outseq ", draft_consensus_tmp1))
-  system(paste0("sed 's/[nN]//g' ", draft_consensus_tmp1, " > ", draft_consensus_tmp2))
-  DNAStringSet_obj <- readDNAStringSet(draft_consensus_tmp2, "fasta")
-  DNAStringSet_obj_renamed <- DNAStringSet_obj
-  original_headers <- names(DNAStringSet_obj)
-  sequences <- seq(DNAStringSet_obj)
-  names(DNAStringSet_obj_renamed) <- paste0("Allele_number_", allele_num)
-  writeXStringSet(x = DNAStringSet_obj_renamed, filepath = draft_consensus, format = "fasta", width = 20000)
 }
 
 Obtain_draft_consensus(fastq_file, allele_num, min_maf, TRC, PLUR, num_threads, fast_alignment_flag)
