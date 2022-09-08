@@ -165,15 +165,16 @@ process consensusPolishing {
     """
         mkdir -p ${params.results_dir}/consensusPolishing
         export PATH=\$PATH:/opt/conda/envs/CharONT_env/bin/
-
-        draft_consensus_files=\$(find ${params.results_dir}/draftConsensusCalling/${sample} | grep ${sample}"_draft_allele.*\\.fasta" | grep -v "tmp")
-
+        
+        [ "\$(ls -A ${params.results_dir}/draftConsensusCalling/${sample})" ] \
+        && draft_consensus_files=\$(find ${params.results_dir}/draftConsensusCalling/${sample} | grep ${sample}"_draft_allele.*\\.fasta" | grep -v "tmp") \
+        || draft_consensus_files="" && mkdir ${params.results_dir}/consensusPolishing/${sample}
+        
         for f in \$draft_consensus_files; do
            allele_number=\$(echo \$(basename \$f) | sed \'s/.*_allele_//\' | sed \'s/\\.fasta//\')
            fastq_file=\$(find ${params.results_dir}/readsAssignment/${sample} | grep "\\d.*\\.fastq" | grep "allele_"\$allele_number)
            /opt/conda/envs/CharONT_env/bin/Rscript ${params.scripts_dir}/Polish_consensus.R draft_consensus=\$f fastq_file=\$fastq_file allele_num=\$allele_number TRP=${params.target_reads_polishing} num_threads=${task.cpus} primers_length=${params.primers_length} medaka_model=${params.medaka_model}
         done
-        
     """
     else
     """
@@ -197,11 +198,14 @@ process trfAnnotate {
     if(params.trfAnnotate)
     """
         mkdir -p ${params.results_dir}/trfAnnotate/
-        polished_consensus_files=\$(find ${params.results_dir}/consensusPolishing/${sample} | grep ${sample}"_allele.*\\.fasta" | grep -v "untrimmed")
-        mkdir -p ${params.results_dir}/trfAnnotate/${sample}
-        cd ${params.results_dir}/trfAnnotate/${sample}
-        cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample}
-
+        
+        [ "\$(ls -A ${params.results_dir}/consensusPolishing/${sample})" ] \
+        && polished_consensus_files=\$(find ${params.results_dir}/consensusPolishing/${sample} | grep ${sample}"_allele.*\\.fasta" | grep -v "untrimmed") \
+        mkdir -p ${params.results_dir}/trfAnnotate/${sample} \
+        cd ${params.results_dir}/trfAnnotate/${sample} \
+        cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample} \
+        || polished_consensus_files=""
+        
         for f in \$polished_consensus_files; do            
             /opt/conda/envs/CharONT_env/bin/trf \$f 2 7 7 80 10 50 500 || echo "processed \$? TRs"
             /opt/conda/envs/CharONT_env/bin/trf \$f 2 3 5 80 10 50 500 || echo "processed \$? TRs"
@@ -217,5 +221,3 @@ process trfAnnotate {
         cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample}
     """
 }
-
-    
