@@ -201,9 +201,9 @@ process trfAnnotate {
         
         [ "\$(ls -A ${params.results_dir}/consensusPolishing/${sample})" ] \
         && polished_consensus_files=\$(find ${params.results_dir}/consensusPolishing/${sample} | grep ${sample}"_allele.*\\.fasta" | grep -v "untrimmed") \
-        mkdir -p ${params.results_dir}/trfAnnotate/${sample} \
-        cd ${params.results_dir}/trfAnnotate/${sample} \
-        cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample} \
+        && mkdir -p ${params.results_dir}/trfAnnotate/${sample} \
+        && cd ${params.results_dir}/trfAnnotate/${sample} \
+        && cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample} \
         || polished_consensus_files=""
         
         for f in \$polished_consensus_files; do            
