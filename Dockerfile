@@ -34,10 +34,11 @@ conda config --add channels anaconda && \
 conda config --add channels conda-forge && \
 conda config --add channels bioconda
 
-RUN conda create -n CharONT_env bioconductor-biostrings r-kernsmooth 
-RUN conda install -n CharONT_env emboss vsearch seqtk mafft minimap2 samtools=1.15 medaka trf NanoFilt bbmap racon
-RUN conda create -n pycoQC_env python=3.6 pip
+RUN conda create -n CharONT_env bioconductor-biostrings r-kernsmooth python=3.8
+RUN conda install -n CharONT_env emboss vsearch seqtk mafft minimap2 samtools=1.15 medaka trf bbmap nanofilt
 
+RUN conda create -n pycoQC_env python=3.8 pip racon
 RUN /opt/conda/envs/pycoQC_env/bin/python -m pip install pycoQC
 RUN ln -s /opt/conda/envs/pycoQC_env/bin/pycoQC /opt/conda/envs/CharONT_env/bin
+RUN ln -s /opt/conda/envs/pycoQC_env/bin/racon /opt/conda/envs/CharONT_env/bin
 WORKDIR /home/
