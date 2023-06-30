@@ -27,7 +27,7 @@ def helpMessage() {
     --target_reads_polishing                                              target_reads_polishing defines the maximum number of reads used for consensus polishing
     --max_reads_preliminary                                               max_reads_preliminary defines the maximum number of reads used for preliminary clustering and consensus calling
     --clustering_id_threshold                                             identity threshold for clustering preliminary allele assembly
-    --plurality                                                           cut-off for the number of positive matches in the multiple sequence alignment below which there is no consensus
+    --plurality                                                           MAFFT plurality value: minimum fraction of aligned reads supporting a basis for including it in the preliminary consensus
     --min_maf                                                             minimum minor allele frequency; if less than min_maf*100% of reads are assigned to Allele //2, the sample is assumed homozygous
     --IQR_outliers_coef_precl                                             label as candidate outliers reads with score > 3rd_QR + IQR_outliers_coef_precl*IQR or score < 1st_QR - IQR_outliers_coef_precl*IQR
     --IQR_outliers_coef                                                   label as outliers reads with score > 3rd_QR + IQR_outliers_coef*IQR or score < 1st_QR - IQR_outliers_coef*IQR; IQR is computed within each cluster
@@ -54,9 +54,9 @@ Channel
     // in-silico PCR
 process inSilicoPCR {
   input:
-    tuple val(sample), val(fastq) from inputFiles_inSilicoPCR
+    tuple val(sample), val(fastq)
   output:
-    val(sample) into inSilicoPCR_preliminaryConsensusCalling
+    val sample
   script:
   if(params.inSilicoPCR)
   """
@@ -87,11 +87,9 @@ process inSilicoPCR {
 // Preliminary consensus sequence generation
 process preliminaryConsensusCalling {
     input:
-        val(sample) from inSilicoPCR_preliminaryConsensusCalling
-
+        val sample
     output:
-        val(sample) into preliminaryConsensusCalling_readsAssignment
-
+        val sample
     script:
     if(params.preliminaryConsensusCalling)
     """
@@ -108,11 +106,9 @@ process preliminaryConsensusCalling {
 
 process readsAssignment {
     input:
-         val(sample) from preliminaryConsensusCalling_readsAssignment
-    
+         val sample
     output:
-        val(sample) into readsAssignment_draftConsensusCalling
-
+        val sample
     script:
     if(params.readsAssignment)
     """
@@ -128,11 +124,9 @@ process readsAssignment {
 
 process draftConsensusCalling {
     input:
-        val(sample) from readsAssignment_draftConsensusCalling
-
+        val sample
     output:
-        val(sample) into draftConsensusCalling_consensusPolishing        
-
+        val sample
     script:
     if(params.draftConsensusCalling)
     """
@@ -155,26 +149,23 @@ process draftConsensusCalling {
 
 process consensusPolishing {
     input:
-        val(sample) from draftConsensusCalling_consensusPolishing
-
+        val sample
     output:
-        val(sample) into consensusPolishing_trfAnnotate
-    
+        val sample
     script:
     if(params.consensusPolishing)
     """
         mkdir -p ${params.results_dir}/consensusPolishing
         export PATH=\$PATH:/opt/conda/envs/CharONT_env/bin/
-        
-        [ "\$(ls -A ${params.results_dir}/draftConsensusCalling/${sample})" ] \
-        && draft_consensus_files=\$(find ${params.results_dir}/draftConsensusCalling/${sample} | grep ${sample}"_draft_allele.*\\.fasta" | grep -v "tmp") \
-        || draft_consensus_files="" && mkdir ${params.results_dir}/consensusPolishing/${sample}
-        
+
+        draft_consensus_files=\$(find ${params.results_dir}/draftConsensusCalling/${sample} | grep ${sample}"_draft_allele.*\\.fasta" | grep -v "tmp")
+
         for f in \$draft_consensus_files; do
            allele_number=\$(echo \$(basename \$f) | sed \'s/.*_allele_//\' | sed \'s/\\.fasta//\')
            fastq_file=\$(find ${params.results_dir}/readsAssignment/${sample} | grep "\\d.*\\.fastq" | grep "allele_"\$allele_number)
            /opt/conda/envs/CharONT_env/bin/Rscript ${params.scripts_dir}/Polish_consensus.R draft_consensus=\$f fastq_file=\$fastq_file allele_num=\$allele_number TRP=${params.target_reads_polishing} num_threads=${task.cpus} primers_length=${params.primers_length} medaka_model=${params.medaka_model}
         done
+        
     """
     else
     """
@@ -189,23 +180,17 @@ process consensusPolishing {
 
 process trfAnnotate {
     input:
-          val(sample) from consensusPolishing_trfAnnotate
-
+          val sample
     output:
-        
-
     script:
     if(params.trfAnnotate)
     """
         mkdir -p ${params.results_dir}/trfAnnotate/
-        
-        [ "\$(ls -A ${params.results_dir}/consensusPolishing/${sample})" ] \
-        && polished_consensus_files=\$(find ${params.results_dir}/consensusPolishing/${sample} | grep ${sample}"_allele.*\\.fasta" | grep -v "untrimmed") \
-        && mkdir -p ${params.results_dir}/trfAnnotate/${sample} \
-        && cd ${params.results_dir}/trfAnnotate/${sample} \
-        && cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample} \
-        || polished_consensus_files=""
-        
+        polished_consensus_files=\$(find ${params.results_dir}/consensusPolishing/${sample} | grep ${sample}"_allele.*\\.fasta" | grep -v "untrimmed")
+        mkdir -p ${params.results_dir}/trfAnnotate/${sample}
+        cd ${params.results_dir}/trfAnnotate/${sample}
+        cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample}
+
         for f in \$polished_consensus_files; do            
             /opt/conda/envs/CharONT_env/bin/trf \$f 2 7 7 80 10 50 500 || echo "processed \$? TRs"
             /opt/conda/envs/CharONT_env/bin/trf \$f 2 3 5 80 10 50 500 || echo "processed \$? TRs"
@@ -221,3 +206,14 @@ process trfAnnotate {
         cp \$polished_consensus_files ${params.results_dir}/trfAnnotate/${sample}
     """
 }
+
+workflow {
+    inSilicoPCR(inputFiles_inSilicoPCR)
+    preliminaryConsensusCalling(inSilicoPCR.out)
+    readsAssignment(preliminaryConsensusCalling.out)
+    draftConsensusCalling(readsAssignment.out)
+    consensusPolishing(draftConsensusCalling.out)
+    trfAnnotate(consensusPolishing.out)
+}
+
+    
