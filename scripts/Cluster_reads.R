@@ -28,13 +28,14 @@ for(v in args)
 suppressMessages(library(Biostrings))
 #load stats package
 suppressMessages(library(stats))
+#load factoextra package
+suppressMessages(library(factoextra))
 
 Cluster_reads <- function(fastq_file, first_allele_preliminary, IQR_outliers_coef_precl, IQR_outliers_coef, min_clipped_len, sd_noise_score, num_alleles) {
   IQR_outliers_coef <- as.numeric(IQR_outliers_coef)
   IQR_outliers_coef_precl <- as.numeric(IQR_outliers_coef_precl)
   min_clipped_len <- as.numeric(min_clipped_len)
   sd_noise_score <- as.numeric(sd_noise_score)
-  num_alleles <- as.numeric(num_alleles)
   sample_name <- gsub(pattern = "_trimmed", replacement = "", x = basename(gsub(pattern = "\\.fastq", replacement = "", x = fastq_file)))
   sample_dir <- gsub(pattern = "_trimmed", replacement = "", x = gsub(pattern = "inSilicoPCR", replacement = "readsAssignment", x = gsub(pattern = "\\.fastq", replacement = "", x = fastq_file)))
   dir.create(sample_dir)
@@ -218,7 +219,7 @@ Cluster_reads <- function(fastq_file, first_allele_preliminary, IQR_outliers_coe
     preclustering_score_no_outliers <- matrix(score, ncol = 2)
   }
   #skip clustering and assign all reads to one allele if studying haploid chromosome or if there are not 2 different maximum non-matching lengths across all reads
-  if (num_alleles == 1 || nrow(unique(preclustering_score_no_outliers)) < 2) {
+  if (num_alleles == "1" || nrow(unique(preclustering_score_no_outliers)) < 2) {
     if (nrow(unique(preclustering_score_no_outliers)) < 2) {
       cat(text = paste0("WARNING: not possible to identify multiple alleles for sample ", sample_name, ", haploid analysis is performed"), sep = "\n")
       cat(text = paste0("WARNING: not possible to identify multiple alleles for sample ", sample_name, ", haploid analysis is performed"), file = logfile, sep = "\n", append = TRUE)
@@ -253,11 +254,24 @@ Cluster_reads <- function(fastq_file, first_allele_preliminary, IQR_outliers_coe
     #cluster reads into num_alleles groups (ref/alt alleles) based on length of the longest portion non matching the reference (first allele)
   } else {
     #do clustering
-    clusters <- kmeans(preclustering_score_no_outliers, num_alleles, iter.max = 1000, nstart = 5)
+    if (num_alleles == "auto") {
+      max_num_cl <- 10
+      opt <- fviz_nbclust(as.matrix(preclustering_score_no_outliers), kmeans, method = "silhouette", k.max = min(length(unique(preclustering_score_no_outliers)), max_num_cl)) + theme_classic()
+      plot(opt)
+      ggsave(paste0(sample_dir, "/", sample_name, "_reads_scores_silhouette.png"))
+      tol <- 1
+      ncl <- max(as.numeric(opt$data$clusters[which(opt$data$y >= tol*max(opt$data$y))]))
+      cat(text = paste0("Optimal number of clusters based on Silhouette coefficient: ", ncl), sep = "\n")
+      cat(text = paste0("Optimal number of clusters based on Silhouette coefficient: ", ncl), file = logfile, sep = "\n", append = TRUE)
+      clusters <- kmeans(preclustering_score_no_outliers, ncl, iter.max = 1000, nstart = 5)
+      num_alleles <- ncl
+    } else {
+      num_alleles <- as.numeric(num_alleles)
+      clusters <- kmeans(preclustering_score_no_outliers, num_alleles, iter.max = 1000, nstart = 5)
+    }
     #find index and score of reference reads
     cluster_reference_id <- unique(which(rowMeans(clusters$centers) == min(rowMeans(clusters$centers))))
     cluster_reference_index_tmp <- which(clusters$cluster == cluster_reference_id)
-    
     #find index and score of alternative alleles
     cluster_alternative_id <- (1:num_alleles)[-cluster_reference_id]
     cluster_alternative_index_tmp <- lapply(cluster_alternative_id, function (x) which(clusters$cluster == x))
