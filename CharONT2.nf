@@ -18,7 +18,7 @@ def helpMessage() {
     Other mandatory arguments which may be specified in the CharONT2.conf file
     --fastq_files                                                         Path to fastq files, use wildcards to select multiple samples
     --results_dir                                                         Path to a folder where to store results
-    --num_alleles                                                         num_alleles represents the number of expected alleles
+    --num_alleles                                                         num_alleles represents the number of expected alleles; use --num_alleles="auto" for automatic num_alleles detection based on Silhouette coefficient
     --PCRThr                                                              PCRThr is the identity threshold for in-silico PCR in case inSilicoPCR=true
     --primerSeqOne                                                        primerSeqOne is a primer sequence used for in-silico PCR in case inSilicoPCR=true
     --primerSeqTwo                                                        primerSeqTwo is a primer sequence used for in-silico PCR in case inSilicoPCR=true
