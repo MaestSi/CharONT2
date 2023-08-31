@@ -44,6 +44,8 @@ RUN conda install -n CharONT_env trf
 RUN conda install -n CharONT_env bbmap
 RUN conda install -n CharONT_env nanofilt
 RUN conda install -n CharONT_env samtools
+RUN conda install -n CharONT_env bcftools
+RUN conda install -n CharONT_env tabix
 RUN /opt/conda/envs/CharONT_env/bin/python -m pip install medaka
 
 RUN conda create -n pycoQC_env python=3.8 pip racon
