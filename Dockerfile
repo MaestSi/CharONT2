@@ -50,4 +50,5 @@ RUN conda create -n pycoQC_env python=3.8 pip racon
 RUN /opt/conda/envs/pycoQC_env/bin/python -m pip install pycoQC
 RUN ln -s /opt/conda/envs/pycoQC_env/bin/pycoQC /opt/conda/envs/CharONT_env/bin
 RUN ln -s /opt/conda/envs/pycoQC_env/bin/racon /opt/conda/envs/CharONT_env/bin
+ENV PATH=$PATH:/opt/conda/envs/CharONT_env/bin
 WORKDIR /home/
