@@ -48,7 +48,7 @@ if (params.help) {
 // Input of sample names, conditions, and FAST5s path.
 Channel
     .fromPath(params.fastq_files)
-    .map {tuple( it.name.split('\\.')[0], it )}
+    .map {tuple( it.name.split('\\.f')[0], it )}
     .set{inputFiles_inSilicoPCR}
 
     // in-silico PCR
