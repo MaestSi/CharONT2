@@ -36,13 +36,13 @@ conda config --add channels bioconda
 
 RUN conda create -n CharONT_env bioconductor-biostrings r-kernsmooth r-factoextra python=3.12 pip
 RUN /opt/conda/envs/CharONT_env/bin/python -m pip install medaka
+RUN conda install -n CharONT_env bbmap==38.18
 RUN conda install -n CharONT_env emboss
 RUN conda install -n CharONT_env vsearch
 RUN conda install -n CharONT_env seqtk
 RUN conda install -n CharONT_env mafft
 RUN conda install -n CharONT_env minimap2
 RUN conda install -n CharONT_env trf
-RUN conda install -n CharONT_env bbmap
 RUN conda install -n CharONT_env nanofilt
 RUN conda install -n CharONT_env samtools
 RUN conda install -n CharONT_env bcftools
