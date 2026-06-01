@@ -81,7 +81,7 @@ Other mandatory arguments which may be specified in the CharONT2.conf file
 ## Pipeline testing
                                                                                                                                                 
 A test fastq dataset obtained with [DeepSimulator](https://github.com/liyu95/DeepSimulator) is provided. The datasets contains 1,000 reads simulating a heterozygous short tandem repeat expansion in DMPK gene.
-For full pipeline testing, set the following parsmeters:
+For full pipeline testing, set the following parameters:
 
 ```                                                                                                                                                
 --primerSeqOne="GCTCCGCAGGGGGGGCGGGTCTGGCCGGGAGGAGGGGCGGGGAACGGGCTAGAAAGTTTGCAGCAACTTTTCTCGAGCTTGCGTCCCAGGAGCGGATGCGC"
