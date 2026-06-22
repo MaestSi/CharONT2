@@ -82,7 +82,7 @@ Obtain_preliminary_consensus <- function(fastq_file, TRC, max_num_reads_clusteri
     system(paste0("/opt/conda/envs/CharONT_env/bin/seqtk seq -A ", draft_reads_fq_first_preliminary, " > ", draft_reads_fa_first_preliminary))
     mfa_file_first_preliminary <- gsub(pattern = "\\.fasta$", replacement = ".mfa", x = draft_reads_fa_first_preliminary)
     system(paste0("/opt/conda/envs/CharONT_env/bin/mafft --auto --thread ", num_threads, " --adjustdirectionaccurately ", draft_reads_fa_first_preliminary, " > ", mfa_file_first_preliminary))
-    system(paste0("/opt/conda/envs/CharONT_env/bin/cons -sequence ", mfa_file_first_preliminary, " -plurality ", PLUR, " -outseq ", first_allele_preliminary_tmp1))
+    system(paste0("/opt/conda/envs/CharONT_env/bin/cons -sequence ", mfa_file_first_preliminary, " -plurality ", plurality_value, " -outseq ", first_allele_preliminary_tmp1))
     system(paste0("sed 's/[nN]//g' ", first_allele_preliminary_tmp1, " > ", first_allele_preliminary_tmp2))
     DNAStringSet_obj <- readDNAStringSet(first_allele_preliminary_tmp2, "fasta")
     DNAStringSet_obj_renamed <- DNAStringSet_obj
